@@ -1,0 +1,227 @@
+SEMIRESTFULTVSHOWS
+
+from django.db import models
+
+# Create your models here.
+class Show(models.Model):
+    title = models.CharField(max_length=255)
+    network = models.CharField(max_length=45)
+    release_date = models.DateTimeField()
+    description = models.CharField(max_length=255)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+
+===================VIEW.PY=========================================
+from django.shortcuts import render, redirect
+from .models import Show
+
+# Create your views here.
+def index(request):
+    context = {
+        'shows': Show.objects.all()
+    }
+    return render(request, 'shows.html', context)
+
+def new(request):
+    return render(request, 'new.html')
+
+def create(request):
+    # CREATE THE SHOW
+    Show.objects.create(
+        title = request.POST['title'],
+        network = request.POST['network'],
+        release_date = request.POST['release_date'],
+        description = request.POST['description']
+    )
+    return redirect('/shows')
+
+def edit(request, show_id):
+    one_show = Show.objects.get(id=show_id)
+    context = {
+        'show': one_show
+    }
+    return render(request, 'edit.html', context)
+
+def update(request, show_id):
+    # update show!
+    to_update = Show.objects.get(id=show_id)
+    # updates each field
+    to_update.title = request.POST['title']
+    to_update.release_date = request.POST['release_date']
+    to_update.network = request.POST['network']
+    to_update.description = request.POST['description']
+    to_update.save()
+
+    return redirect('/shows/')
+
+def show(request, show_id):
+    # query for one show with show_id
+    one_show = Show.objects.get(id=show_id)
+    context = {
+        'show': one_show
+    }
+    return render(request, 'show.html', context)
+
+def delete(request, show_id):
+    # NOTE: Delete one show!
+    to_delete = Show.objects.get(id=show_id)
+    to_delete.delete()
+    return redirect('/shows')
+=====================================================URLS.PY=========================================
+
+from django.urls import path
+from . import views
+
+urlpatterns = [
+    # localhost:8000/shows
+    path('', views.index),
+    # localhost:8000/shows/new
+    path('new', views.new),
+    # localhost:8000/shows/create
+    path('create', views.create),
+    # localhost:8000/shows/<show_id>/edit
+    path('<int:show_id>/edit', views.edit),
+    # localhost:8000/shows/<show_id>/update
+    path('<int:show_id>/update', views.update),
+    # localhost:8000/shows/<show_id>
+    path('<int:show_id>', views.show),
+    # localhost:8000/shows/<show_id>/delete
+    path('<int:show_id>/delete', views.delete),
+
+======================EDIT.HTML========================================================
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Edit Show</title>
+    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.0/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-9aIt2nRpC12Uk9gS9baDl411NQApFmC26EwAOH8WgZl5MYYxFfc+NcPb1dKGj7Sk" crossorigin="anonymous">
+    {% load static %}
+    <link rel="stylesheet" href="{% static 'css/style.css' %}">
+</head>
+<body>
+    <h1>Edit Show</h1>
+    <form action="/shows/{{ show.id }}/update" method="post">
+        {% csrf_token %}
+        <div class="form-group">
+            <label for="title">Title</label>
+            <input type="text" name="title" id="title" class="form-control" value="{{ show.title}}">
+        </div>
+        <div class="form-group">
+            <label for="network">Network</label>
+            <input type="text" name="network" id="network" class="form-control" value="{{ show.network}}">
+        </div>
+        <div class="form-group">
+            <label for="release_date">Release Date</label>
+            <input type="date" name="release_date" id="release_date" class="form-control" value="{{ show.release_date|date:'Y-m-d'}}">
+        </div>
+        <div class="form-group">
+            <label for="description">Description</label>
+            <textarea name="description" id="description" cols="30" rows="10" class="form-control">{{ show.description}}</textarea>
+        </div>
+        <button class="btn btn-primary">Submit</button>
+    </form>
+</body>
+</html>
+===================================================NEW.HTML=======================================================
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.0/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-9aIt2nRpC12Uk9gS9baDl411NQApFmC26EwAOH8WgZl5MYYxFfc+NcPb1dKGj7Sk" crossorigin="anonymous">
+    {% load static %}
+    <link rel="stylesheet" href="{% static 'css/style.css' %}">
+    <title>New Show</title>
+</head>
+<body>
+    <h1>New Show</h1>
+    <form action="/shows/create" method="post">
+        {% csrf_token %}
+        <div class="form-group">
+            <label for="title">Title</label>
+            <input type="text" name="title" id="title" class="form-control">
+        </div>
+        <div class="form-group">
+            <label for="network">Network</label>
+            <input type="text" name="network" id="network" class="form-control">
+        </div>
+        <div class="form-group">
+            <label for="release_date">Release Date</label>
+            <input type="date" name="release_date" id="release_date" class="form-control">
+        </div>
+        <div class="form-group">
+            <label for="description">Description</label>
+            <textarea name="description" id="description" cols="30" rows="10" class="form-control"></textarea>
+        </div>
+        <button class="btn btn-primary">Submit</button>
+    </form>
+</body>
+</html>
+====================================================SHOW.HTML==========================
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Show Details</title>
+    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.0/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-9aIt2nRpC12Uk9gS9baDl411NQApFmC26EwAOH8WgZl5MYYxFfc+NcPb1dKGj7Sk" crossorigin="anonymous">
+    {% load static %}
+    <link rel="stylesheet" href="{% static 'css/style.css' %}">
+</head>
+<body>
+    <h1>TV Show #{{ show.id}}</h1>
+    <h4>Title</h4>
+    <p>{{ show.title }}</p>
+    <h4>Network</h4>
+    <p>{{ show.network }}</p>
+    <h4>Release Date</h4>
+    <p>{{ show.release_date }}</p>
+    <h4>Description</h4>
+    <p>{{ show.description }}</p>
+    <h4>Last Updated</h4>
+    <p>{{ show.updated_at }}</p>
+    <a href="/shows/{{ show.id }}/edit">Edit</a> | <a href="/shows/{{ show.id }}/delete">Delete</a>
+</body>
+</html>
+
+=====================SHOWS.HTML============================================================
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Read (All)</title>
+    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.0/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-9aIt2nRpC12Uk9gS9baDl411NQApFmC26EwAOH8WgZl5MYYxFfc+NcPb1dKGj7Sk" crossorigin="anonymous">
+    {% load static %}
+    <link rel="stylesheet" href="{% static 'css/style.css' %}">
+</head>
+<body>
+    <h1>All Shows</h1>
+    <table class="table table-dark">
+        <thead>
+            <tr>
+                <th>Id</th>
+                <th>Title</th>
+                <th>Network</th>
+                <th>Release Date</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+        {% for show in shows %}
+            <tr>
+                <td>{{ show.id }}</td>
+                <td>{{ show.title }}</td>
+                <td>{{ show.network }}</td>
+                <td>{{ show.release_date|date:"SHORT_DATE_FORMAT" }}</td>
+                <td><a href="/shows/{{ show.id }}">Show</a> | <a href="/shows/{{ show.id }}/edit">Edit</a> | <a href="/shows/{{ show.id }}/delete">Delete</a></td>
+            </tr>
+        {% endfor %}
+        </tbody>
+        <a href="/shows/new">Add a Show!</a>
+    </table>
+</body>
+</html>
